@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#17120e">
+<title>琴房小幫手</title>
+<style>
+:root{
+  --bg:#17120e; --card:#221a14; --card2:#2d241c; --line:#3b2f25;
+  --text:#f3e9dc; --muted:#a5968a; --gold:#d6a84e; --gold2:#f2cb74; --ink:#1a130d;
+  --green:#5fbf7a; --yellow:#e2b93b; --red:#e06a5a;
+  --shadow:0 6px 20px rgba(0,0,0,.35); --r:16px;
+  --c0:#2a211a; --c1:#4a3a22; --c2:#7a5a26; --c3:#b0812f; --c4:#f2cb74;
+}
+[data-theme="light"]{
+  --bg:#f6f1ea; --card:#fffdf9; --card2:#f1e8dc; --line:#e3d7c7;
+  --text:#2b2118; --muted:#7d6e60; --gold:#a8761c; --gold2:#c8912b; --ink:#fff;
+  --shadow:0 4px 14px rgba(80,50,20,.10);
+  --c0:#efe6da; --c1:#f3dcae; --c2:#e6bc68; --c3:#c8912b; --c4:#8a5e12;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg)}
+body{color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;
+  min-height:100vh;padding-bottom:calc(84px + env(safe-area-inset-bottom));transition:background .3s,color .3s;line-height:1.5}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;border:none;background:none}
+.wrap{max-width:520px;margin:0 auto;padding:0 16px}
+
+/* header */
+header{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line)}
+header .wrap{display:flex;align-items:center;gap:10px;height:58px}
+.logo{font-weight:800;font-size:19px;letter-spacing:.5px;flex:1;white-space:nowrap}
+.logo span{color:var(--gold)}
+.chip-d{font-size:13px;font-weight:700;padding:4px 10px;border-radius:99px;background:var(--card2);color:var(--gold2);border:1px solid var(--line);white-space:nowrap}
+.icon-btn{width:40px;height:40px;border-radius:12px;background:var(--card2);border:1px solid var(--line);font-size:18px;display:grid;place-items:center}
+
+/* pages */
+.page{display:none;padding-top:16px;animation:fade .25s ease}
+.page.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+h2{font-size:22px;margin:4px 0 12px}
+h3{font-size:15px;color:var(--muted);font-weight:600;margin-bottom:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px;box-shadow:var(--shadow)}
+.muted{color:var(--muted);font-size:14px}
+.center{text-align:center}
+.row{display:flex;gap:8px}
+.row>*{flex:1}
+.btn{min-height:48px;border-radius:12px;background:var(--card2);border:1px solid var(--line);font-weight:700;font-size:16px;padding:0 12px;transition:transform .08s}
+.btn:active{transform:scale(.96)}
+.btn.gold{background:var(--gold);color:var(--ink);border-color:var(--gold)}
+.btn.big{width:100%;min-height:58px;font-size:18px;border-radius:14px}
+.btn.on{background:var(--red);border-color:var(--red);color:#fff}
+.btn.ghost{background:transparent;border-style:dashed;width:100%}
+.btn.small{min-height:36px;font-size:14px;padding:0 10px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{min-height:40px;padding:0 14px;border-radius:99px;background:var(--card2);border:1px solid var(--line);font-weight:600;font-size:15px}
+.chip.sel{background:var(--gold);color:var(--ink);border-color:var(--gold)}
+input[type=text],input[type=number],input[type=date],input[type=password]{width:100%;min-height:44px;border-radius:10px;border:1px solid var(--line);background:var(--card2);padding:0 12px;font-size:16px;outline:none}
+input:focus{border-color:var(--gold)}
+label.f{display:block;margin-bottom:12px;font-size:14px;color:var(--muted)}
+label.f input{margin-top:4px;color:var(--text)}
+.bar{height:12px;border-radius:99px;background:var(--card2);overflow:hidden;border:1px solid var(--line)}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:99px;transition:width .4s}
+
+/* metronome */
+.bpm{font-size:84px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;margin-top:6px}
+.tname{color:var(--gold);font-weight:700;letter-spacing:1px;margin:4px 0 14px}
+.dots{display:flex;justify-content:center;gap:12px;margin:8px 0 18px}
+.dot{width:22px;height:22px;border-radius:50%;background:var(--card2);border:2px solid var(--line);transition:background .05s,transform .05s}
+.dot.first{border-color:var(--gold)}
+.dot.lit{background:var(--gold2);border-color:var(--gold2);transform:scale(1.25)}
+input[type=range]{width:100%;accent-color:var(--gold);height:36px}
+#flash{position:fixed;inset:0;pointer-events:none;background:var(--gold2);opacity:0;z-index:5}
+#flash.go{animation:fl .18s ease-out}
+#flash.go.accent{animation:fl2 .22s ease-out}
+@keyframes fl{0%{opacity:.07}100%{opacity:0}}
+@keyframes fl2{0%{opacity:.16}100%{opacity:0}}
+
+/* practice */
+.seg{display:grid;grid-template-columns:28px 70px 1fr 36px;gap:8px;align-items:center;margin-bottom:10px}
+.seg .n{width:28px;height:28px;border-radius:50%;background:var(--card2);display:grid;place-items:center;font-size:13px;font-weight:700;color:var(--gold)}
+.seg input{min-height:42px;padding:0 8px}
+.seg .x{width:36px;height:36px;border-radius:10px;color:var(--muted);font-size:18px}
+.sum{text-align:right;color:var(--muted);font-size:14px;margin-top:8px}
+.timer{font-size:76px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}
+.goal{font-size:18px;font-weight:700;margin:8px 0 14px}
+.slist li{list-style:none;display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:15px}
+.slist li:last-child{border:none}
+.slist li.cur{color:var(--gold2);font-weight:700}
+.slist li.doneS{color:var(--muted);text-decoration:line-through}
+.done-big{font-size:56px}
+
+/* calendar */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 6px;text-align:center}
+.stat b{display:block;font-size:26px;line-height:1.2}
+.stat span{font-size:12px;color:var(--muted)}
+.calhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.calhead b{font-size:17px}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.wd{text-align:center;font-size:12px;color:var(--muted)}
+.day{aspect-ratio:1;border-radius:10px;background:var(--c0);display:grid;place-items:center;font-size:13px;font-weight:600;border:2px solid transparent}
+.day.l1{background:var(--c1)}.day.l2{background:var(--c2)}.day.l3{background:var(--c3);color:var(--ink)}.day.l4{background:var(--c4);color:var(--ink)}
+.day.today{border-color:var(--text)}
+.day.sel{outline:2px solid var(--gold);outline-offset:1px}
+.day.empty{background:transparent}
+.legend{display:flex;align-items:center;gap:4px;justify-content:flex-end;font-size:12px;color:var(--muted);margin-top:10px}
+.legend i{width:14px;height:14px;border-radius:4px;display:inline-block}
+
+/* piece */
+.cd{font-size:40px;font-weight:800;color:var(--gold2);text-align:center;margin-top:4px}
+.sec{padding:12px 0;border-bottom:1px solid var(--line)}
+.sec:last-child{border:none}
+.sec-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-weight:700}
+.stages{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.st{min-height:38px;border-radius:8px;background:var(--card2);border:1px solid var(--line);font-size:12px;font-weight:600;padding:0 2px}
+.st.sel{background:var(--gold);color:var(--ink);border-color:var(--gold)}
+.st.past{background:color-mix(in srgb,var(--gold) 30%,var(--card2))}
+
+/* coach */
+.status{display:flex;gap:14px;align-items:center}
+.light{width:56px;height:56px;border-radius:50%;flex:none;box-shadow:0 0 22px currentColor;background:currentColor}
+.s-green{color:var(--green)}.s-yellow{color:var(--yellow)}.s-red{color:var(--red)}.s-gray{color:var(--muted)}
+.status b{font-size:19px;color:var(--text);display:block}
+.status p{color:var(--text)}
+.tips li{list-style:none;padding:10px 12px;border-radius:12px;background:var(--card2);margin-bottom:8px;font-size:15px}
+.tips li b{color:var(--gold2)}
+.ai-out{background:var(--card2);border-radius:12px;padding:14px;margin-top:12px;font-size:15px;white-space:normal;display:none}
+.ai-out.show{display:block}
+details summary{cursor:pointer;font-weight:700;list-style:none}
+details summary::-webkit-details-marker{display:none}
+.note{font-size:12px;color:var(--muted);margin-top:8px}
+
+/* nav */
+nav{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav .wrap{display:grid;grid-template-columns:repeat(5,1fr);padding:0 4px}
+.tab{height:68px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;color:var(--muted);font-weight:600}
+.tab .e{font-size:22px;filter:grayscale(.8);opacity:.7;transition:.15s}
+.tab.active{color:var(--gold2)}
+.tab.active .e{filter:none;opacity:1;transform:translateY(-2px)}
+.toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%) translateY(20px);background:var(--text);color:var(--bg);padding:10px 18px;border-radius:99px;font-size:14px;font-weight:600;opacity:0;transition:.25s;z-index:50;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%)}
+.modal{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:24px}
+.modal.show{display:flex;animation:fade .15s ease}
+.modal-box{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;width:100%;max-width:340px;box-shadow:var(--shadow)}
+.modal-box p{font-size:17px;font-weight:700;margin-bottom:18px;line-height:1.5}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g2 label.f{margin-bottom:0}
+select{width:100%;min-height:44px;border-radius:10px;border:1px solid var(--line);background:var(--card2);padding:0 10px;font-size:16px;outline:none;margin-top:4px;color:var(--text)}
+.lad-now{display:flex;align-items:baseline;justify-content:center;gap:10px;margin:4px 0 10px}
+.lad-now b{font-size:48px;line-height:1;color:var(--gold2);font-variant-numeric:tabular-nums}
+.reps{display:flex;justify-content:center;gap:10px;margin:14px 0}
+.rep{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);background:var(--card2);display:grid;place-items:center;font-size:14px;transition:.15s}
+.rep.ok{background:var(--green);border-color:var(--green);color:#fff;transform:scale(1.1)}
+.bar.lad i{background:linear-gradient(90deg,var(--green),var(--gold2))}
+.btn.danger{background:var(--red);border-color:var(--red);color:#fff}
+</style>
+</head>
+<body>
+<div id="flash"></div>
+<header><div class="wrap">
+  <div class="logo">🎹 琴房<span>小幫手</span></div>
+  <div class="chip-d" id="hdrCd" hidden></div>
+  <button class="icon-btn" id="themeBtn" aria-label="切換主題">☀️</button>
+</div></header>
+
+<main class="wrap">
+  <!-- 節拍器 -->
+  <section class="page active" id="p-metro">
+    <div class="card center">
+      <div class="bpm" id="bpmVal">80</div>
+      <div class="muted">BPM</div>
+      <div class="tname" id="tName">Andante</div>
+      <div class="dots" id="dots"></div>
+      <input type="range" id="bpmRange" min="40" max="208" value="80" aria-label="速度">
+      <div class="row" style="margin-top:8px">
+        <button class="btn" data-d="-5">−5</button><button class="btn" data-d="-1">−1</button>
+        <button class="btn" data-d="1">+1</button><button class="btn" data-d="5">+5</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>拍號</h3>
+      <div class="chips" id="sigs"></div>
+    </div>
+    <div class="row">
+      <button class="btn gold big" id="mStart">▶ 開始</button>
+      <button class="btn big" id="tapBtn" style="flex:.6">👆 Tap</button>
+    </div>
+    <p class="note center" style="margin-bottom:14px">Tap：跟著心中的速度連點 4 下，自動算出 BPM</p>
+    <div class="card" id="ladderBox"></div>
+  </section>
+
+  <!-- 練習 -->
+  <section class="page" id="p-prac"><div id="pracBox"></div></section>
+
+  <!-- 打卡 -->
+  <section class="page" id="p-cal">
+    <div class="stats">
+      <div class="stat"><b id="stStreak">0</b><span>🔥 連續天數</span></div>
+      <div class="stat"><b id="stToday">0</b><span>今天（分）</span></div>
+      <div class="stat"><b id="stWeek">0</b><span>本週（分）</span></div>
+    </div>
+    <div class="card">
+      <div class="calhead">
+        <button class="icon-btn" id="calPrev">‹</button><b id="calTitle"></b><button class="icon-btn" id="calNext">›</button>
+      </div>
+      <div class="grid" id="calGrid"></div>
+      <div class="legend">少 <i style="background:var(--c0)"></i><i style="background:var(--c1)"></i><i style="background:var(--c2)"></i><i style="background:var(--c3)"></i><i style="background:var(--c4)"></i> 多</div>
+    </div>
+    <div class="card" id="dayBox"></div>
+  </section>
+
+  <!-- 曲目 -->
+  <section class="page" id="p-piece"><div id="pieceBox"></div></section>
+
+  <!-- 教練 -->
+  <section class="page" id="p-coach"><div id="coachBox"></div>
+    <div class="card">
+      <details id="aiDet">
+        <summary>✨ AI 教練（選用，需自備 Gemini API Key）›</summary>
+        <div style="margin-top:12px">
+          <label class="f">API Key（只存在你這台裝置的瀏覽器）<input type="password" id="aiKey" placeholder="貼上 Gemini API Key" autocomplete="off"></label>
+          <label class="f">模型名稱<input type="text" id="aiModel"></label>
+          <div class="row"><button class="btn gold" id="aiAsk">🤖 問 AI 教練</button><button class="btn" id="aiClear" style="flex:.5">清除 Key</button></div>
+          <p class="note">Key 可在 Google AI Studio 免費申請。資料只會送到 Google Gemini，不會經過其他伺服器。</p>
+        </div>
+      </details>
+      <div class="ai-out" id="aiOut"></div>
+    </div>
+  </section>
+</main>
+
+<nav><div class="wrap">
+  <button class="tab active" data-p="metro"><span class="e">🎵</span>節拍器</button>
+  <button class="tab" data-p="prac"><span class="e">⏱️</span>練習</button>
+  <button class="tab" data-p="cal"><span class="e">📅</span>打卡</button>
+  <button class="tab" data-p="piece"><span class="e">🎼</span>曲目</button>
+  <button class="tab" data-p="coach"><span class="e">🤖</span>教練</button>
+</div></nav>
+<div class="toast" id="toast"></div>
+<div class="modal" id="modal"><div class="modal-box"><p id="mMsg"></p>
+  <div class="row"><button class="btn" id="mNo">取消</button><button class="btn danger" id="mYes">確定</button></div></div></div>
+
+<script>
+/* ========== 工具 & 資料 ========== */
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+const KEY = 'pianoBuddy_v1';
+const pad = n => String(n).padStart(2,'0');
+const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parse = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y,m-1,d); };
+const today = () => fmt(new Date());
+const addDays = (s,n) => { const d = parse(s); d.setDate(d.getDate()+n); return fmt(d); };
+const diffDays = (a,b) => Math.round((parse(b)-parse(a))/86400000);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const STAGES = ['讀譜','分手','合手慢速','原速','可演出'];
+
+const DEFAULTS = {
+  theme:'dark', log:{}, snaps:{}, apiKey:'', model:'gemini-2.5-flash',
+  metro:{bpm:80, sig:4},
+  ladder:{on:false, start:60, target:96, step:4, need:3, reps:0, cur:60, sec:''},
+  piece:{name:'', date:'', sections:[]},
+  segs:[{min:15,goal:'暖身：音階、琶音'},{min:15,goal:'難段慢練'},{min:15,goal:'整首順過一次'}]
+};
+let S;
+try { S = Object.assign(JSON.parse(JSON.stringify(DEFAULTS)), JSON.parse(localStorage.getItem(KEY) || '{}')); }
+catch(e) { S = JSON.parse(JSON.stringify(DEFAULTS)); }
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} }
+
+/* 自製確認框：取代瀏覽器內建確認視窗，避免在預覽或內嵌視窗中被擋掉 */
+function ask(msg, yes='確定'){
+  return new Promise(res => {
+    const m = $('#modal'); $('#mMsg').textContent = msg; $('#mYes').textContent = yes; m.classList.add('show');
+    const done = v => { m.classList.remove('show'); $('#mYes').onclick = $('#mNo').onclick = m.onclick = null; res(v); };
+    $('#mYes').onclick = () => done(true); $('#mNo').onclick = () => done(false);
+    m.onclick = e => { if(e.target === m) done(false); };
+  });
+}
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),1800); }
+
+/* ========== 分頁 & 主題 ========== */
+const RENDER = { metro:()=>renderLadder(), prac:()=>renderPrac(), cal:()=>renderCal(), piece:()=>renderPiece(), coach:()=>renderCoach() };
+function go(p){
+  $$('.page').forEach(x => x.classList.toggle('active', x.id === 'p-'+p));
+  $$('.tab').forEach(x => x.classList.toggle('active', x.dataset.p === p));
+  RENDER[p] && RENDER[p]();
+  window.scrollTo(0,0);
+}
+$$('.tab').forEach(b => b.onclick = () => go(b.dataset.p));
+function applyTheme(){
+  document.documentElement.dataset.theme = S.theme;
+  $('#themeBtn').textContent = S.theme === 'dark' ? '☀️' : '🌙';
+  document.querySelector('meta[name=theme-color]').content = S.theme === 'dark' ? '#17120e' : '#f6f1ea';
+}
+$('#themeBtn').onclick = () => { S.theme = S.theme === 'dark' ? 'light' : 'dark'; save(); applyTheme(); };
+
+/* ========== 聲音 ========== */
+let ctx;
+function ac(){
+  if(!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+  if(ctx.state === 'suspended') ctx.resume();
+  return ctx;
+}
+function click(t, accent){
+  const c = ac(), o = c.createOscillator(), g = c.createGain();
+  o.frequency.value = accent === 2 ? 1650 : accent === 1 ? 1250 : 900;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(accent ? 0.9 : 0.5, t + 0.002);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
+  o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + 0.07);
+}
+function chime(){
+  const c = ac(), t = c.currentTime;
+  [[880,0],[1175,.18],[1568,.36]].forEach(([f,d]) => {
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = 'sine'; o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t+d);
+    g.gain.exponentialRampToValueAtTime(0.5, t+d+0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t+d+0.7);
+    o.connect(g); g.connect(c.destination); o.start(t+d); o.stop(t+d+0.75);
+  });
+  if(navigator.vibrate) navigator.vibrate([120,80,120]);
+}
+let wl = null;
+async function wake(on){
+  try{
+    if(on && !wl && 'wakeLock' in navigator){ wl = await navigator.wakeLock.request('screen'); wl.addEventListener('release', () => wl = null); }
+    else if(!on && wl && !mRun && !P.running){ await wl.release(); wl = null; }
+  }catch(e){}
+}
+
+/* ========== 1. 節拍器 ========== */
+const SIGS = [{n:2,l:'2/4'},{n:3,l:'3/4'},{n:4,l:'4/4'},{n:6,l:'6/8'}];
+let mRun = false, nextT = 0, beat = 0, mTimer = null, vq = [];
+function tempoName(b){
+  if(b<60) return 'Largo 廣板'; if(b<66) return 'Larghetto 小廣板'; if(b<76) return 'Adagio 慢板';
+  if(b<108) return 'Andante 行板'; if(b<120) return 'Moderato 中板'; if(b<156) return 'Allegro 快板';
+  if(b<176) return 'Vivace 活潑'; if(b<200) return 'Presto 急板'; return 'Prestissimo 最急板';
+}
+function renderMetro(){
+  $('#bpmVal').textContent = S.metro.bpm;
+  $('#bpmRange').value = S.metro.bpm;
+  $('#tName').textContent = tempoName(S.metro.bpm);
+  $('#sigs').innerHTML = SIGS.map(s => `<button class="chip ${s.n===S.metro.sig?'sel':''}" data-n="${s.n}">${s.l}</button>`).join('');
+  $('#dots').innerHTML = Array.from({length:S.metro.sig}, (_,i) => `<div class="dot ${i===0||(S.metro.sig===6&&i===3)?'first':''}"></div>`).join('');
+}
+function setBpm(v){ S.metro.bpm = Math.max(40, Math.min(208, Math.round(v))); save(); renderMetroVals(); }
+function renderMetroVals(){ $('#bpmVal').textContent = S.metro.bpm; $('#bpmRange').value = S.metro.bpm; $('#tName').textContent = tempoName(S.metro.bpm); }
+const accentOf = i => i === 0 ? 2 : (S.metro.sig === 6 && i === 3 ? 1 : 0);
+function sched(){
+  while(nextT < ctx.currentTime + 0.1){
+    click(nextT, accentOf(beat)); vq.push({t:nextT, b:beat});
+    nextT += 60 / S.metro.bpm; beat = (beat + 1) % S.metro.sig;
+  }
+}
+function drawBeat(){
+  if(!mRun) return;
+  const now = ctx.currentTime;
+  while(vq.length && vq[0].t <= now){ lightBeat(vq.shift().b); }
+  requestAnimationFrame(drawBeat);
+}
+function lightBeat(b){
+  $$('.dot').forEach((d,i) => d.classList.toggle('lit', i === b));
+  if(b >= 0){ const f = $('#flash'); f.className = ''; void f.offsetWidth; f.className = 'go' + (b === 0 ? ' accent' : ''); }
+}
+function startM(){
+  ac(); mRun = true; beat = 0; vq = []; nextT = ctx.currentTime + 0.06;
+  mTimer = setInterval(sched, 25); sched(); requestAnimationFrame(drawBeat);
+  $('#mStart').textContent = '■ 停止'; $('#mStart').classList.add('on'); wake(true);
+}
+function stopM(){
+  mRun = false; clearInterval(mTimer); vq = []; lightBeat(-1);
+  $('#mStart').textContent = '▶ 開始'; $('#mStart').classList.remove('on'); wake(false);
+}
+$('#mStart').onclick = () => mRun ? stopM() : startM();
+$('#bpmRange').oninput = e => setBpm(+e.target.value);
+$$('[data-d]').forEach(b => b.onclick = () => setBpm(S.metro.bpm + (+b.dataset.d)));
+$('#sigs').onclick = e => {
+  const b = e.target.closest('[data-n]'); if(!b) return;
+  S.metro.sig = +b.dataset.n; save(); beat = 0; renderMetro();
+};
+let taps = [];
+$('#tapBtn').onclick = () => {
+  const n = performance.now();
+  if(taps.length && n - taps[taps.length-1] > 2000) taps = [];
+  taps.push(n); if(taps.length > 5) taps.shift();
+  if(taps.length >= 2) setBpm(60000 / ((taps[taps.length-1] - taps[0]) / (taps.length - 1)));
+  else toast('繼續點…');
+};
+
+/* ---------- 1b. 速度階梯 ---------- */
+function renderLadder(){
+  const L = S.ladder, box = $('#ladderBox'), secs = S.piece.sections;
+  if(!L.on){
+    box.innerHTML = `<h3>🪜 速度階梯</h3>
+      <p class="muted" style="margin-bottom:12px">從慢速開始，連續彈對幾次就自動加速，一步步爬到目標速度。</p>
+      <label class="f">要練的段落<select id="lSec"><option value="">自由練習</option>
+        ${secs.map((s,i) => `<option value="${i}" ${String(i)===String(L.sec)?'selected':''}>${esc(s.name)}（${STAGES[s.stage]}）</option>`).join('')}</select></label>
+      <div class="g2">
+        <label class="f">起始 BPM<input type="number" id="lStart" inputmode="numeric" value="${L.start}"></label>
+        <label class="f">目標 BPM<input type="number" id="lTarget" inputmode="numeric" value="${L.target}"></label>
+        <label class="f">每級加速<input type="number" id="lStep" inputmode="numeric" value="${L.step}"></label>
+        <label class="f">連續無誤次數<input type="number" id="lNeed" inputmode="numeric" value="${L.need}"></label>
+      </div>
+      <p class="note" id="lHint"></p>
+      <button class="btn gold big" id="lGo" style="margin-top:10px">🪜 開始爬階梯</button>`;
+    const hint = () => {
+      const s = +$('#lStart').value, t = +$('#lTarget').value, st = Math.max(1, +$('#lStep').value || 1);
+      $('#lHint').textContent = t > s ? `共 ${Math.ceil((t - s) / st)} 級，大約要成功彈 ${(Math.ceil((t - s) / st) + 1) * (+$('#lNeed').value || 1)} 次` : '目標速度要比起始速度快喔';
+    };
+    box.oninput = hint; hint();
+    $('#lGo').onclick = () => {
+      const s = Math.max(40, Math.min(208, +$('#lStart').value || 60)), t = Math.max(40, Math.min(208, +$('#lTarget').value || 96));
+      if(t <= s) return toast('目標速度要比起始速度快');
+      Object.assign(L, {on:true, start:s, target:t, step:Math.max(1, Math.min(20, +$('#lStep').value || 4)),
+        need:Math.max(1, Math.min(10, +$('#lNeed').value || 3)), reps:0, cur:s, sec:$('#lSec').value});
+      setBpm(s); save(); renderLadder(); toast(`從 ${s} BPM 開始爬！`);
+    };
+    return;
+  }
+  const pct = Math.round((L.cur - L.start) / (L.target - L.start) * 100);
+  const secName = L.sec !== '' && secs[+L.sec] ? secs[+L.sec].name : '自由練習';
+  box.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">🪜 速度階梯・${esc(secName)}</h3>
+      <button class="btn small" id="lEnd">結束</button></div>
+    <div class="lad-now"><b>${L.cur}</b><span class="muted">→ 目標 ${L.target} BPM</span></div>
+    <div class="bar lad"><i style="width:${pct}%"></i></div>
+    <p class="note center">${L.cur >= L.target ? '最後一關：在目標速度連續彈對！' : `再升 ${Math.ceil((L.target - L.cur) / L.step)} 級就到了`}</p>
+    <div class="reps">${Array.from({length:L.need}, (_,i) => `<div class="rep ${i < L.reps ? 'ok' : ''}">${i < L.reps ? '✓' : ''}</div>`).join('')}</div>
+    <div class="row"><button class="btn" id="lFail">❌ 有錯，重來</button><button class="btn gold" id="lOk">✅ 順了！</button></div>`;
+  $('#lEnd').onclick = async () => { if(await ask('結束這次速度階梯？', '結束')){ L.on = false; save(); renderLadder(); } };
+  $('#lFail').onclick = () => { L.reps = 0; save(); renderLadder(); toast('沒關係，同一個速度再來一次'); };
+  $('#lOk').onclick = async () => {
+    L.reps++;
+    if(L.reps < L.need){ save(); renderLadder(); return; }
+    if(L.cur >= L.target){
+      L.on = false; save(); chime(); renderLadder(); toast(`🏆 達成目標 ${L.target} BPM！`);
+      const sec = L.sec !== '' ? secs[+L.sec] : null;
+      if(sec && sec.stage < 3 && await ask(`「${sec.name}」已經能彈到目標速度了，要把它升到「原速」嗎？`, '升級')){
+        sec.stage = 3; snap(); toast('🎼 段落已升級為「原速」');
+      }
+      return;
+    }
+    L.cur = Math.min(L.target, L.cur + L.step); L.reps = 0;
+    setBpm(L.cur); save(); chime(); renderLadder(); toast(`⬆️ 升級！現在 ${L.cur} BPM`);
+  };
+}
+
+/* ========== 2. 分段練習 ========== */
+let P = {active:false, finished:false, running:false, idx:0, remain:0, endAt:0, lastMark:0, status:[], tick:null};
+function addSec(sec){ if(sec <= 0) return; const d = today(); S.log[d] = (S.log[d] || 0) + sec; save(); }
+function flushElapsed(){ const now = Date.now(); addSec((now - P.lastMark) / 1000); P.lastMark = now; }
+const totalMin = () => S.segs.reduce((a,s) => a + (+s.min || 0), 0);
+const mmss = sec => { sec = Math.max(0, Math.ceil(sec)); return `${pad(Math.floor(sec/60))}:${pad(sec%60)}`; };
+
+function renderPrac(){
+  const box = $('#pracBox');
+  if(P.finished){
+    const m = Math.round((S.log[today()] || 0) / 60);
+    const done = P.status.filter(x => x === 'done').length;
+    box.innerHTML = `<div class="card center"><div class="done-big">🎉</div><h2>練習完成！</h2>
+      <p class="muted">完成 ${done} / ${S.segs.length} 段・今天累計 <b style="color:var(--gold2)">${m}</b> 分鐘</p></div>
+      <button class="btn gold big" id="pBack">回到練習設定</button>
+      <p class="note center">記得到「曲目」更新段落進度，教練才算得準 😉</p>`;
+    $('#pBack').onclick = () => { P.finished = false; renderPrac(); };
+    return;
+  }
+  if(!P.active){
+    box.innerHTML = `<h2>今天練什麼？</h2>
+      <div class="card"><h3>快速範本</h3><div class="chips">
+        <button class="chip" data-t="15,3">15 分 × 3</button><button class="chip" data-t="10,2">10 分 × 2</button>
+        <button class="chip" data-t="20,2">20 分 × 2</button><button class="chip" data-t="5,4">5 分 × 4</button></div></div>
+      <div class="card"><h3>練習段落（分鐘・小目標）</h3><div id="segList"></div>
+        <button class="btn ghost" id="addSeg">＋ 新增一段</button><div class="sum" id="segSum"></div></div>
+      <button class="btn gold big" id="pGo">▶ 開始練習</button>
+      <p class="note center">練習時可以切去節拍器，計時會繼續跑</p>`;
+    renderSegs();
+    box.querySelector('.chips').onclick = e => {
+      const b = e.target.closest('[data-t]'); if(!b) return;
+      const [m,n] = b.dataset.t.split(',').map(Number);
+      S.segs = Array.from({length:n}, (_,i) => ({min:m, goal:(S.segs[i] && S.segs[i].goal) || `第 ${i+1} 段`}));
+      save(); renderSegs();
+    };
+    $('#addSeg').onclick = () => { S.segs.push({min:10, goal:''}); save(); renderSegs(); };
+    $('#pGo').onclick = pStart;
+    return;
+  }
+  const seg = S.segs[P.idx];
+  box.innerHTML = `<div class="card center">
+      <div class="muted">第 ${P.idx+1} / ${S.segs.length} 段</div>
+      <div class="timer" id="pTime">${mmss(P.remain)}</div>
+      <div class="goal">${esc(seg.goal || '自由練習')}</div>
+      <div class="bar"><i id="pBar" style="width:0%"></i></div>
+      <div class="row" style="margin-top:16px">
+        <button class="btn ${P.running?'':'gold'}" id="pPlay">${P.running?'⏸ 暫停':'▶ 繼續'}</button>
+        <button class="btn" id="pSkip">⏭ 跳過</button><button class="btn" id="pStop">⏹ 結束</button>
+      </div></div>
+    <div class="card"><h3>今日段落</h3><ul class="slist">${S.segs.map((s,i) => {
+      const st = P.status[i], cls = i === P.idx ? 'cur' : st === 'done' ? 'doneS' : '';
+      const ic = st === 'done' ? '✅' : st === 'skip' ? '⏭️' : i === P.idx ? '▶️' : '⚪';
+      return `<li class="${cls}"><span>${ic}</span><span style="flex:1">${esc(s.goal || '自由練習')}</span><span class="muted">${s.min} 分</span></li>`;
+    }).join('')}</ul></div>`;
+  $('#pPlay').onclick = () => P.running ? pPause() : pResume();
+  $('#pSkip').onclick = () => { if(P.running) flushElapsed(); P.status[P.idx] = 'skip'; nextSeg(); };
+  $('#pStop').onclick = async () => { if(!(await ask('結束這次練習？已練的時間會保留。','結束'))) return; if(P.running) flushElapsed(); clearInterval(P.tick); P.running = false; P.active = false; P.finished = true; wake(false); renderPrac(); };
+  updateTimer();
+}
+function renderSegs(){
+  $('#segList').innerHTML = S.segs.map((s,i) => `<div class="seg" data-i="${i}">
+    <div class="n">${i+1}</div>
+    <input type="number" min="1" max="120" inputmode="numeric" value="${s.min}" data-k="min">
+    <input type="text" value="${esc(s.goal)}" placeholder="小目標，例：12–20 小節右手" data-k="goal">
+    <button class="x" aria-label="刪除">✕</button></div>`).join('');
+  $('#segSum').textContent = `總計 ${totalMin()} 分鐘`;
+  $('#segList').oninput = e => {
+    const row = e.target.closest('.seg'); if(!row) return;
+    const i = +row.dataset.i, k = e.target.dataset.k;
+    S.segs[i][k] = k === 'min' ? Math.max(1, Math.min(120, +e.target.value || 1)) : e.target.value;
+    save(); $('#segSum').textContent = `總計 ${totalMin()} 分鐘`;
+  };
+  $('#segList').onclick = e => {
+    if(!e.target.closest('.x')) return;
+    if(S.segs.length <= 1) return toast('至少要留一段');
+    S.segs.splice(+e.target.closest('.seg').dataset.i, 1); save(); renderSegs();
+  };
+}
+function pStart(){
+  ac();
+  P = {active:true, finished:false, running:false, idx:0, remain:S.segs[0].min*60, endAt:0, lastMark:0, status:S.segs.map(()=>null), tick:null};
+  pResume();
+}
+function pResume(){
+  P.running = true; P.endAt = Date.now() + P.remain*1000; P.lastMark = Date.now();
+  clearInterval(P.tick); P.tick = setInterval(pTick, 250); wake(true); renderPrac();
+}
+function pPause(){
+  P.running = false; clearInterval(P.tick); P.remain = Math.max(0, (P.endAt - Date.now())/1000);
+  flushElapsed(); wake(false); renderPrac();
+}
+function pTick(){
+  P.remain = (P.endAt - Date.now()) / 1000;
+  if(Date.now() - P.lastMark > 10000) flushElapsed();
+  if(P.remain <= 0){ flushElapsed(); P.status[P.idx] = 'done'; chime(); toast('✅ 這段完成！'); nextSeg(); }
+  else updateTimer();
+}
+function nextSeg(){
+  P.idx++;
+  if(P.idx >= S.segs.length){
+    clearInterval(P.tick); P.running = false; P.active = false; P.finished = true; wake(false); renderPrac(); return;
+  }
+  P.remain = S.segs[P.idx].min * 60;
+  if(P.running){ P.endAt = Date.now() + P.remain*1000; P.lastMark = Date.now(); }
+  renderPrac();
+}
+function updateTimer(){
+  const t = $('#pTime'), b = $('#pBar'); if(!t) return;
+  t.textContent = mmss(P.remain);
+  const total = S.segs[P.idx].min * 60;
+  b.style.width = Math.min(100, (1 - P.remain/total) * 100) + '%';
+}
+
+/* ========== 3. 打卡日曆 ========== */
+let calM = new Date(); calM.setDate(1); let selDay = today();
+const mins = d => Math.round((S.log[d] || 0) / 60);
+function streak(){
+  let d = today(); if(!(mins(d) >= 1)) d = addDays(d, -1);
+  let n = 0; while(mins(d) >= 1){ n++; d = addDays(d, -1); } return n;
+}
+function weekMins(){
+  const t = new Date(), mon = addDays(today(), -((t.getDay()+6) % 7));
+  let s = 0; for(let i = 0; i < 7; i++) s += S.log[addDays(mon, i)] || 0; return Math.round(s/60);
+}
+const lvl = m => m <= 0 ? 0 : m < 15 ? 1 : m < 30 ? 2 : m < 60 ? 3 : 4;
+function renderCal(){
+  $('#stStreak').textContent = streak(); $('#stToday').textContent = mins(today()); $('#stWeek').textContent = weekMins();
+  const y = calM.getFullYear(), m = calM.getMonth();
+  $('#calTitle').textContent = `${y} 年 ${m+1} 月`;
+  const off = (new Date(y,m,1).getDay() + 6) % 7, days = new Date(y,m+1,0).getDate();
+  let h = '一二三四五六日'.split('').map(w => `<div class="wd">${w}</div>`).join('');
+  for(let i = 0; i < off; i++) h += `<div class="day empty"></div>`;
+  for(let d = 1; d <= days; d++){
+    const k = `${y}-${pad(m+1)}-${pad(d)}`;
+    h += `<button class="day l${lvl(mins(k))} ${k===today()?'today':''} ${k===selDay?'sel':''}" data-k="${k}">${d}</button>`;
+  }
+  $('#calGrid').innerHTML = h;
+  const [, sm, sd] = selDay.split('-').map(Number);
+  $('#dayBox').innerHTML = `<h3>${sm} 月 ${sd} 日</h3>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="flex:1;font-size:28px;font-weight:800">${mins(selDay)} <span class="muted">分鐘</span></div>
+      <button class="btn small" data-a="-5">−5</button><button class="btn small" data-a="5">+5</button><button class="btn small" data-a="15">+15</button>
+    </div><p class="note">忘記計時也沒關係，可以在這裡手動補登</p>`;
+}
+$('#calGrid').onclick = e => { const b = e.target.closest('[data-k]'); if(b){ selDay = b.dataset.k; renderCal(); } };
+$('#dayBox').onclick = e => {
+  const b = e.target.closest('[data-a]'); if(!b) return;
+  S.log[selDay] = Math.max(0, (S.log[selDay] || 0) + (+b.dataset.a) * 60);
+  if(!S.log[selDay]) delete S.log[selDay];
+  save(); renderCal();
+};
+$('#calPrev').onclick = () => { calM.setMonth(calM.getMonth()-1); renderCal(); };
+$('#calNext').onclick = () => { calM.setMonth(calM.getMonth()+1); renderCal(); };
+
+/* ========== 4. 曲目進度 ========== */
+const progress = () => { const s = S.piece.sections; return s.length ? Math.round(s.reduce((a,x) => a + x.stage*25, 0) / s.length) : 0; };
+function snap(){ if(S.piece.sections.length){ S.snaps[today()] = progress(); } save(); renderHeader(); }
+function daysLeft(){ return S.piece.date ? diffDays(today(), S.piece.date) : null; }
+function renderHeader(){
+  const d = daysLeft(), el = $('#hdrCd');
+  if(d === null){ el.hidden = true; return; }
+  el.hidden = false; el.textContent = d > 0 ? `🎭 D-${d}` : d === 0 ? '🎭 今天表演！' : '🎭 已結束';
+}
+function renderPiece(){
+  const pc = S.piece, d = daysLeft(), pr = progress();
+  $('#pieceBox').innerHTML = `<h2>曲目與表演</h2>
+    <div class="card">
+      <label class="f">曲名<input type="text" id="pcName" value="${esc(pc.name)}" placeholder="例：蕭邦 夜曲 Op.9 No.2"></label>
+      <label class="f">表演日期<input type="date" id="pcDate" value="${pc.date}"></label>
+      ${d !== null ? `<div class="cd">${d > 0 ? `還有 ${d} 天` : d === 0 ? '就是今天！' : '表演已結束'}</div>` : ''}
+    </div>
+    <div class="card"><div style="display:flex;justify-content:space-between;align-items:baseline"><h3>整體進度</h3><b style="font-size:22px;color:var(--gold2)">${pr}%</b></div>
+      <div class="bar"><i style="width:${pr}%"></i></div></div>
+    <div class="card"><h3>段落熟練度</h3>
+      <div id="secList">${pc.sections.length ? pc.sections.map((s,i) => `<div class="sec" data-i="${i}">
+        <div class="sec-top"><span>${esc(s.name)}</span><button class="btn small" data-del style="min-height:30px">✕</button></div>
+        <div class="stages">${STAGES.map((n,j) => `<button class="st ${j===s.stage?'sel':j<s.stage?'past':''}" data-s="${j}">${n}</button>`).join('')}</div>
+      </div>`).join('') : '<p class="muted">還沒有段落，先把曲子切成幾段吧（例如每 16 小節一段）</p>'}</div>
+      <div class="row" style="margin-top:12px"><input type="text" id="secNew" placeholder="例：第 1–16 小節"><button class="btn gold" id="secAdd" style="flex:.35">新增</button></div>
+    </div>
+    <div class="row"><button class="btn" id="demo">🧪 載入示範資料</button><button class="btn" id="wipe">🗑 清除所有資料</button></div>
+    <p class="note center">示範資料會覆蓋目前的曲目與打卡紀錄</p>`;
+  $('#pcName').oninput = e => { pc.name = e.target.value; save(); };
+  $('#pcDate').onchange = e => { pc.date = e.target.value; save(); renderPiece(); renderHeader(); };
+  const add = () => { const v = $('#secNew').value.trim(); if(!v) return toast('先輸入段落名稱'); pc.sections.push({name:v, stage:0}); snap(); renderPiece(); $('#secNew').focus(); };
+  $('#secAdd').onclick = add;
+  $('#secNew').onkeydown = e => { if(e.key === 'Enter') add(); };
+  $('#secList').onclick = async e => {
+    const row = e.target.closest('.sec'); if(!row) return; const i = +row.dataset.i;
+    if(e.target.closest('[data-del]')){ if(await ask(`刪除「${pc.sections[i].name}」？`,'刪除')){ pc.sections.splice(i,1); snap(); renderPiece(); } return; }
+    const b = e.target.closest('[data-s]'); if(!b) return;
+    pc.sections[i].stage = +b.dataset.s; snap(); renderPiece();
+    if(+b.dataset.s === 4) toast('🎉 這段可以上台了！');
+  };
+  $('#demo').onclick = loadDemo;
+  $('#wipe').onclick = async () => { if(await ask('確定清除所有資料？無法復原。','清除')){ const t = S.theme; S = JSON.parse(JSON.stringify(DEFAULTS)); S.theme = t; save(); renderAll(); toast('已清除'); } };
+}
+function loadDemo(){
+  const t = today();
+  S.piece = {name:'蕭邦 夜曲 Op.9 No.2（示範）', date:addDays(t, 40), sections:[
+    {name:'A 段（1–12 小節）', stage:3}, {name:'B 段（13–20 小節）', stage:2},
+    {name:'A’ 段（21–24 小節）', stage:2}, {name:'裝飾音段（25–30 小節）', stage:1}, {name:'尾奏（31–34 小節）', stage:0}]};
+  S.snaps = {}; S.log = {};
+  const hist = [[-14,20],[-10,25],[-7,30],[-4,35],[-1,40]];
+  hist.forEach(([d,p]) => S.snaps[addDays(t,d)] = p);
+  S.snaps[t] = progress();
+  const pattern = [25,0,40,15,30,0,20,45,30,15,0,35,20,30];
+  pattern.forEach((m,i) => { if(m) S.log[addDays(t, -(14-i))] = m*60; });
+  save(); renderAll(); toast('已載入示範資料');
+}
+
+/* ========== 5. 教練 ========== */
+const METHOD = [
+  {s:'分手讀譜・節拍器 50%', l:'先不急著彈：標好指法、圈出難點，再分手慢慢摸音，節拍器開目標速度的 50%。'},
+  {s:'分手慢練・節拍器 60%', l:'左右手各自練到「連續 3 次沒錯」再換手，節拍器開目標速度的 60%。'},
+  {s:'合手慢練・用速度階梯', l:'合手慢練，打開節拍器的「🪜 速度階梯」：連續 3 次無誤就自動 +4 BPM，一步一步爬到目標速度。'},
+  {s:'原速順彈・錄音找問題', l:'原速完整彈，錄下來聽一次，把卡住的 2 小節圈起來局部加強。'},
+  {s:'完整演出練習', l:'假裝在台上：從頭彈到尾不停下來，練的是「出錯也能接下去」。'}
+];
+function analyze(){
+  const pc = S.piece;
+  if(!pc.date || !pc.sections.length) return null;
+  const t = today(), left = diffDays(t, pc.date), prog = progress(), remain = 100 - prog;
+  let m7 = []; for(let i = 6; i >= 0; i--) m7.push(mins(addDays(t, -i)));
+  const avgMin = m7.reduce((a,b) => a+b, 0) / 7;
+  const dates = Object.keys(S.snaps).sort(), cutoff = addDays(t, -7);
+  let rate = null;
+  const before = dates.filter(d => d <= cutoff).pop();
+  const base = before || dates[0];
+  if(base && base !== t){
+    const from = before ? cutoff : base, span = diffDays(from, t);
+    if(span >= 1) rate = (prog - S.snaps[base]) / span;
+  }
+  const need = left > 0 ? remain / left : Infinity;
+  let level, title;
+  if(left < 0){ level = 'gray'; title = '表演已經結束，辛苦了！'; }
+  else if(left === 0){ level = 'green'; title = '今天就是表演日！深呼吸，相信你的練習 💪'; }
+  else if(remain === 0){ level = 'green'; title = '全部段落都可以上台了 🎉'; }
+  else if(rate !== null){ const r = rate / need; level = r >= 1 ? 'green' : r >= 0.6 ? 'yellow' : 'red'; }
+  else { level = need <= 1.5 ? 'green' : need <= 3 ? 'yellow' : 'red'; }
+  if(!title) title = {green:'照目前步調，來得及 🎉', yellow:'有點緊，要再加把勁', red:'目前進度有危險 ⚠️'}[level];
+  return {left, prog, remain, need, rate, avgMin, m7, level, title};
+}
+function weakest(n){
+  return S.piece.sections.map((s,i) => ({...s, i})).sort((a,b) => a.stage - b.stage || a.i - b.i).slice(0, n);
+}
+function renderCoach(){
+  const a = analyze(), box = $('#coachBox');
+  if(!a){
+    box.innerHTML = `<h2>AI 練琴教練</h2><div class="card center"><div class="done-big">🤖</div>
+      <p style="margin:8px 0 14px">先到「曲目」設定<b>表演日期</b>和<b>段落進度</b>，<br>我才能幫你判斷來不來得及。</p>
+      <div class="row"><button class="btn gold" id="toPiece">去設定曲目</button><button class="btn" id="demo2">🧪 用示範資料</button></div></div>`;
+    $('#toPiece').onclick = () => go('piece');
+    $('#demo2').onclick = () => { loadDemo(); renderCoach(); };
+    return;
+  }
+  const n = S.piece.sections.length;
+  let detail = '';
+  if(a.left > 0 && a.remain > 0){
+    const perStep = (25 / n) / a.need;
+    detail = `還有 <b>${a.left}</b> 天、剩 <b>${a.remain}%</b> 進度 → 每天要進步約 <b>${a.need.toFixed(1)}%</b>`;
+    detail += a.rate !== null
+      ? `；最近你每天進步 <b>${a.rate.toFixed(1)}%</b>。`
+      : `。<br><span class="muted">（進步速度資料還不夠，隔天再更新進度會更準）</span>`;
+    detail += `<br>換句話說：平均每 <b>${Math.max(1, Math.floor(perStep))}</b> 天要讓任一段落升一級。`;
+  }
+  const tips = [];
+  if(a.remain > 0 && a.left >= 0){
+    weakest(2).forEach(s => tips.push(`<b>${esc(s.name)}</b>（${STAGES[s.stage]}）<br>${METHOD[s.stage].l}`));
+  } else if(a.left >= 0){ tips.push(`<b>保持手感</b><br>${METHOD[4].l}`); }
+  if(a.avgMin < 15 && a.left > 0) tips.push(`<b>練習時間</b><br>近 7 天平均每天 ${a.avgMin.toFixed(0)} 分鐘。不用一次練很久，每天 2 段 × 15 分鐘就很有感。`);
+  if(a.rate !== null && a.rate <= 0 && a.remain > 0) tips.push(`<b>進度停滯</b><br>最近 7 天整體進度沒有前進。有練但沒升級的話，可能是練法要換，下次上課可以問老師卡在哪。`);
+  if(a.level === 'red') tips.push(`<b>備案</b><br>可以跟老師討論：是否先放慢演出速度、或簡化某些裝飾音。`);
+  box.innerHTML = `<h2>AI 練琴教練</h2>
+    <div class="card"><div class="status s-${a.level}"><div class="light"></div><div><b>${a.title}</b>
+      <span class="muted">${esc(S.piece.name || '未命名曲目')}・整體 ${a.prog}%</span></div></div>
+      ${detail ? `<p style="margin-top:12px;font-size:15px">${detail}</p>` : ''}</div>
+    ${tips.length ? `<div class="card"><h3>📌 今天建議練</h3><ul class="tips">${tips.map(t => `<li>${t}</li>`).join('')}</ul>
+      ${a.remain > 0 && a.left > 0 ? `<button class="btn gold big" id="applyPlan">⏱ 套用成今天的練習</button>` : ''}</div>` : ''}`;
+  const ap = $('#applyPlan');
+  if(ap) ap.onclick = () => {
+    if(P.active) return toast('先結束目前的練習');
+    const len = a.level === 'red' ? 20 : 15;
+    S.segs = [{min:5, goal:'暖身：音階、琶音'},
+      ...weakest(2).map(s => ({min:len, goal:`${s.name}：${METHOD[s.stage].s}`})),
+      {min:10, goal:'整首順過一次，不停下來'}];
+    save(); P.finished = false; go('prac'); toast('已排好今天的練習');
+  };
+}
+/* --- 真 AI 模式 --- */
+$('#aiKey').value = S.apiKey; $('#aiModel').value = S.model;
+$('#aiKey').oninput = e => { S.apiKey = e.target.value.trim(); save(); };
+$('#aiModel').oninput = e => { S.model = e.target.value.trim(); save(); };
+$('#aiClear').onclick = () => { S.apiKey = ''; $('#aiKey').value = ''; save(); toast('Key 已清除'); };
+function mdLite(s){
+  return esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^#{1,4}\s*(.+)$/gm, '<strong>$1</strong>')
+    .replace(/^\s*[-*]\s+/gm, '• ').replace(/\n/g, '<br>');
+}
+$('#aiAsk').onclick = async () => {
+  const out = $('#aiOut'); out.classList.add('show');
+  if(!S.apiKey) { out.innerHTML = '請先貼上你的 Gemini API Key 🔑'; return; }
+  const a = analyze();
+  if(!a){ out.innerHTML = '請先到「曲目」設定表演日期和段落，AI 才有資料可以分析。'; return; }
+  const data = {
+    曲名: S.piece.name, 距離表演天數: a.left, 整體進度: a.prog + '%',
+    各段落: S.piece.sections.map(s => ({段落:s.name, 階段:STAGES[s.stage]})),
+    熟練階段說明: STAGES.join(' → '),
+    近7天每日練習分鐘: a.m7, 最近每日進步百分比: a.rate === null ? '資料不足' : a.rate.toFixed(1),
+    需要每日進步百分比: isFinite(a.need) ? a.need.toFixed(1) : '—', 系統判斷: a.title
+  };
+  const prompt = `你是一位溫暖但直接的鋼琴老師。學生一個月上一次課，每次沒辦法練很久。請用繁體中文、250 字以內，根據以下數據給建議：
+1. 一句話判斷表演前來不來得及，並說明理由
+2. 今天最該練的 2 件事：要具體到段落、練法、節拍器用目標速度的幾成
+3. 一句鼓勵（不要太浮誇）
+數據：${JSON.stringify(data)}`;
+  out.innerHTML = '🤖 AI 教練思考中…'; $('#aiAsk').disabled = true;
+  try{
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(S.model || 'gemini-2.5-flash')}:generateContent?key=${encodeURIComponent(S.apiKey)}`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({contents:[{parts:[{text:prompt}]}]})
+    });
+    const j = await r.json();
+    if(!r.ok) throw new Error((j.error && j.error.message) || ('HTTP ' + r.status));
+    const text = (j.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('');
+    out.innerHTML = text ? mdLite(text) : 'AI 沒有回覆內容，再試一次看看。';
+  }catch(e){
+    out.innerHTML = `❌ 呼叫失敗：${esc(e.message)}<br><span class="muted">請檢查 API Key 是否正確，或模型名稱是否仍可用。</span>`;
+  }finally{ $('#aiAsk').disabled = false; }
+};
+
+/* ========== 啟動 ========== */
+function renderAll(){
+  applyTheme(); renderMetro(); renderLadder(); renderHeader();
+  const cur = document.querySelector('.tab.active').dataset.p;
+  RENDER[cur] && RENDER[cur]();
+}
+renderAll();
+</script>
+</body>
+</html>
